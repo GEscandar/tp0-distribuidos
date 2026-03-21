@@ -13,7 +13,10 @@ def generate_docker_compose(output_file, num_clients):
                     'PYTHONUNBUFFERED=1',
                     'LOGGING_LEVEL=DEBUG'
                 ],
-                'networks': ['testing_net']
+                'networks': ['testing_net'],
+                'volumes': [
+                    './config.ini:/config.ini'
+                ]
             }
         },
         'networks': {
@@ -39,7 +42,10 @@ def generate_docker_compose(output_file, num_clients):
                 'CLI_LOG_LEVEL=DEBUG'
             ],
             'depends_on': ['server'],
-            'networks': ['testing_net']
+            'networks': ['testing_net'],
+            'volumes': [
+                './config.yaml:/config.yaml'
+            ]
         }
 
     with open(output_file, 'w') as f:
