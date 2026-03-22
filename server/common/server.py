@@ -3,10 +3,12 @@ import logging
 import signal
 from threading import Thread
 
+from server.common.proto import DummyProtocol
+
 class Connection(Thread):
     def __init__(self, sock: socket.socket):
         super().__init__()
-        self.sock = sock
+        self.proto = DummyProtocol(sock)
         self.closed = False
         self.start()
         
@@ -14,7 +16,7 @@ class Connection(Thread):
         while not self.closed:
             try:
                 # TODO: Modify the receive to avoid short-reads
-                msg = self.sock.recv(1024).rstrip().decode('utf-8')
+                msg = self.proto.recv()
                 if not msg:
                    logging.info("Client disconnected gracefully")
                    self.close()
@@ -22,7 +24,7 @@ class Connection(Thread):
                 addr = self.sock.getpeername()
                 logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
                 # TODO: Modify the send to avoid short-writes
-                self.sock.send("{}\n".format(msg).encode('utf-8'))
+                self.proto.send(msg)
             except ConnectionResetError:
                 logging.error(f"Connection reset by client {addr[0]}")
                 self.close()
