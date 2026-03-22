@@ -1,40 +1,45 @@
 from .utils import Bet
-import sys
 import struct
-from socket import socket, htonl, ntohl
+from socket import socket
 
 MAX_UINT16_VALUE = 2**16-1
 
 class DummyProtocol:
-    def __init__(self, sock: socket):
-        self.sock = sock
         
-    def read(self, size: int):
+    def read(self, sock: socket, size: int):
         msg = b""
         while len(msg) < size:
-            chunk = self.sock.recv(size - len(msg))
+            chunk = sock.recv(size - len(msg))
             if not chunk:
                 return None
             msg += chunk
         return msg
-
-    def send(self, bet: Bet):
-        msg = "{},{},{},{},{},{}".format(
-            bet.agency, bet.first_name, bet.last_name, bet.document, bet.birthdate, bet.number)
-        msg_bytes = msg.encode('utf-8')
-        msg_size = len(msg_bytes)
+    
+    def send_bytes(self, sock: socket, buf: bytes):
+        msg_size = len(buf)
         
         if msg_size > MAX_UINT16_VALUE:
             raise ValueError("Message too long")
         
-        self.sock.sendall(struct.pack('>H', htonl(msg_size)))
-        self.sock.sendall(msg_bytes)
+        sock.sendall(struct.pack('>H', msg_size))
+        sock.sendall(buf)
 
-    def recv(self):
-        msg = self.read(2)
+    def send(self, sock: socket, bet: Bet):
+        msg = "{},{},{},{},{},{}".format(
+            bet.agency, bet.first_name, bet.last_name, bet.document, bet.birthdate, bet.number)
+        self.send_bytes(sock, msg.encode('utf-8'))
+        
+    def ack(self, sock: socket, bet: Bet):
+        msg = "{},{}".format(bet.document, bet.number)
+        self.send_bytes(sock, msg.encode('utf-8'))
+
+    def recv(self, sock: socket):
+        msg = self.read(sock, 2)
         if not msg:
             return None
-        msg_size = ntohl(struct.unpack(">H", msg)[0])
-        msg = self.read(msg_size)
+        msg_size = struct.unpack(">H", msg)[0]
+        msg = self.read(sock, msg_size)
+        if not msg:
+            return None
         args = msg.decode('utf-8').split(',')
         return Bet(*args)

@@ -3,6 +3,7 @@ package common
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
 	"math"
 	"net"
 )
@@ -34,4 +35,21 @@ func SendBet(conn net.Conn, bet Bet) (int, error) {
 		sent += n
 	}
 	return sent, nil
+}
+
+func RecvAck(conn net.Conn) (string, error) {
+	buf := make([]byte, 2)
+	err := binary.Read(conn, binary.BigEndian, buf)
+	if err != nil {
+		return "", fmt.Errorf("error receiving message")
+	}
+	msg_size := binary.BigEndian.Uint16(buf)
+	buf = make([]byte, msg_size)
+
+	_, err = io.ReadFull(conn, buf)
+	if err != nil {
+		return "", fmt.Errorf("error receiving message")
+	}
+
+	return string(buf), nil
 }

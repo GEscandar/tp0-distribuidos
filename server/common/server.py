@@ -5,41 +5,42 @@ from threading import Thread
 import threading
 from .utils import store_bets
 
-from server.common.proto import DummyProtocol
+from .proto import DummyProtocol
 
 bets_lock = threading.Lock()
 
 class Connection(Thread):
     def __init__(self, sock: socket.socket):
         super().__init__()
-        self.proto = DummyProtocol(sock)
+        self.sock = sock
+        self.proto = DummyProtocol()
         self.closed = False
         self.start()
         
     def run(self):
         while not self.closed:
             try:
-                # TODO: Modify the receive to avoid short-reads
-                msg = self.proto.recv()
+                msg = self.proto.recv(self.sock)
                 if not msg:
                    logging.info("Client disconnected gracefully")
                    self.close()
                    break
+               
                 addr = self.sock.getpeername()
                 logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
                 with bets_lock:
-                    store_bets(msg)
+                    store_bets([msg])
                 logging.info(f"action: apuesta_almacenada | result: success | dni: {msg.document} | numero: {msg.number}")
-                # TODO: Modify the send to avoid short-writes
-                self.proto.send(msg)
+                
+                self.proto.ack(self.sock, msg)
             except ConnectionResetError:
                 logging.error(f"Connection reset by client {addr[0]}")
                 self.close()
         
     def close(self):
         if not self.closed:
-            self.sock.close()
             self.closed = True
+            self.sock.close()
 
 class Server:
     def __init__(self, port, listen_backlog):
