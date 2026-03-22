@@ -2,8 +2,12 @@ import socket
 import logging
 import signal
 from threading import Thread
+import threading
+from .utils import store_bets
 
 from server.common.proto import DummyProtocol
+
+bets_lock = threading.Lock()
 
 class Connection(Thread):
     def __init__(self, sock: socket.socket):
@@ -23,6 +27,9 @@ class Connection(Thread):
                    break
                 addr = self.sock.getpeername()
                 logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
+                with bets_lock:
+                    store_bets(msg)
+                logging.info(f"action: apuesta_almacenada | result: success | dni: {msg.document} | numero: {msg.number}")
                 # TODO: Modify the send to avoid short-writes
                 self.proto.send(msg)
             except ConnectionResetError:

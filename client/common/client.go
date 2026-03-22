@@ -2,7 +2,6 @@ package common
 
 import (
 	"bufio"
-	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -66,7 +65,7 @@ func (c *Client) createClientSocket() error {
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
-func (c *Client) StartClientLoop() {
+func (c *Client) StartClientLoop(bet Bet) {
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount && !c.closed; msgID++ {
@@ -74,12 +73,7 @@ func (c *Client) StartClientLoop() {
 		c.createClientSocket()
 
 		// TODO: Modify the send to avoid short-write
-		fmt.Fprintf(
-			c.conn,
-			"[CLIENT %v] Message N°%v\n",
-			c.config.ID,
-			msgID,
-		)
+		SendBet(c.conn, bet)
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
 		c.conn.Close()
 
