@@ -38,7 +38,7 @@ def generate_docker_compose(output_file, num_clients):
             'image': 'client:latest',
             'entrypoint': '/client',
             'environment': [
-                'CLI_ID=1',
+                f'CLI_ID={i}',
                 'CLI_LOG_LEVEL=DEBUG'
             ],
             'depends_on': ['server'],
