@@ -15,7 +15,7 @@ def generate_docker_compose(output_file, num_clients):
                 ],
                 'networks': ['testing_net'],
                 'volumes': [
-                    './config.ini:/config.ini'
+                    './server/config.ini:/config.ini'
                 ]
             }
         },
@@ -44,7 +44,7 @@ def generate_docker_compose(output_file, num_clients):
             'depends_on': ['server'],
             'networks': ['testing_net'],
             'volumes': [
-                './config.yaml:/config.yaml'
+                './client/config.yaml:/config.yaml'
             ]
         }
 
