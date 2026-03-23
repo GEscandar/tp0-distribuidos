@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/op/go-logging"
 )
@@ -16,6 +17,8 @@ var log = logging.MustGetLogger("log")
 type ClientConfig struct {
 	ID            string
 	ServerAddress string
+	LoopAmount    int
+	LoopPeriod    time.Duration
 }
 
 // Client Entity that encapsulates how
@@ -65,7 +68,7 @@ func (c *Client) createClientSocket() error {
 func (c *Client) StartClientLoop(bet Bet) {
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
-	for !c.closed {
+	for msgID := 1; msgID <= c.config.LoopAmount && !c.closed; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
 		err := c.createClientSocket()
 		if err != nil {
