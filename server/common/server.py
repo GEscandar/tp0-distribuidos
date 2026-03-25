@@ -20,19 +20,22 @@ class Connection(Thread):
     def run(self):
         while not self.closed:
             try:
-                msg = self.proto.recv(self.sock)
-                if not msg:
+                batch = self.proto.recv_batch(self.sock)
+                if not batch:
                    logging.info("Client disconnected gracefully")
                    self.close()
                    break
-               
-                addr = self.sock.getpeername()
-                logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-                with bets_lock:
-                    store_bets([msg])
-                logging.info(f"action: apuesta_almacenada | result: success | dni: {msg.document} | numero: {msg.number}")
                 
-                self.proto.ack(self.sock, msg)
+                bets, batch_size = batch
+                addr = self.sock.getpeername()
+                if len(bets) == batch_size:
+                    logging.info(f'action: apuesta_recibida | result: success | cantidad: {batch_size}')
+                else:
+                    logging.info(f'action: apuesta_recibida | result: fail | cantidad: {batch_size}')
+                
+                with bets_lock:
+                    store_bets(bets)                    
+                self.proto.ack(self.sock, bets[-1])
             except ConnectionResetError:
                 logging.error(f"Connection reset by client {addr[0]}")
                 self.close()

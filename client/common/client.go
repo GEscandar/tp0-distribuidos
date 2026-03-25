@@ -19,6 +19,7 @@ type ClientConfig struct {
 	ServerAddress string
 	LoopAmount    int
 	LoopPeriod    time.Duration
+	MaxBatchSize  int
 }
 
 // Client Entity that encapsulates how
@@ -68,6 +69,12 @@ func (c *Client) createClientSocket() error {
 func (c *Client) StartClientLoop(bet Bet) {
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
+	loader, err := NewBetsLoader(c.config.ID)
+	if err != nil {
+		log.Errorf("action: create_bets_loader | result: fail | error: %v", err)
+		loader.Close()
+		return
+	}
 	for msgID := 1; msgID <= c.config.LoopAmount && !c.closed; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
 		err := c.createClientSocket()
@@ -75,7 +82,12 @@ func (c *Client) StartClientLoop(bet Bet) {
 			return
 		}
 
-		_, err = SendBet(c.conn, bet)
+		chunk, err := loader.NextChunk(c.config.MaxBatchSize)
+		if err != nil {
+			log.Errorf("action: load_bets | result: fail | error: %v", err)
+			return
+		}
+		_, err = SendBatch(c.conn, chunk)
 		if err != nil {
 			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,

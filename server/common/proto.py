@@ -3,6 +3,7 @@ import struct
 from socket import socket
 
 MAX_UINT16_VALUE = 2**16-1
+MSG_SIZE_BYTE_LEN = 2
 
 class DummyProtocol:
         
@@ -34,12 +35,29 @@ class DummyProtocol:
         self.send_bytes(sock, msg.encode('utf-8'))
 
     def recv(self, sock: socket):
-        msg = self.read(sock, 2)
+        msg = self.read(sock, MSG_SIZE_BYTE_LEN)
         if not msg:
             return None
+        
         msg_size = struct.unpack(">H", msg)[0]
         msg = self.read(sock, msg_size)
         if not msg:
             return None
+        
         args = msg.decode('utf-8').split(',')
         return Bet(*args)
+    
+    def recv_batch(self, sock: socket):
+        msg = self.read(sock, MSG_SIZE_BYTE_LEN)
+        if not msg:
+            return None
+        
+        batch_size = struct.unpack(">H", msg)[0]
+        bets = []
+        for _ in range(batch_size):
+            bet = self.recv(sock)
+            if bet is None:
+                break
+            bets.append(bet)
+            
+        return bets, batch_size

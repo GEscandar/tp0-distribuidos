@@ -14,7 +14,7 @@ type BetsLoader struct {
 }
 
 func NewBetsLoader(agency string) (*BetsLoader, error) {
-	path := fmt.Sprintf("/data/dataset/agency-%s.csv", agency)
+	path := fmt.Sprintf("/data/agency-%s.csv", agency)
 
 	file, err := os.Open(path)
 	if err != nil {
