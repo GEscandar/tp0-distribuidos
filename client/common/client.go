@@ -65,6 +65,16 @@ func (c *Client) createClientSocket() error {
 	return err
 }
 
+func (c *Client) Close() {
+	if !c.closed {
+		c.closed = true
+		if c.conn != nil {
+			_ = c.conn.Close()
+		}
+		log.Infof("action: client_closed | result: success | client_id: %v", c.config.ID)
+	}
+}
+
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop(bet Bet) {
 	// There is an autoincremental msgID to identify every message sent
@@ -75,6 +85,10 @@ func (c *Client) StartClientLoop(bet Bet) {
 		loader.Close()
 		return
 	}
+
+	defer loader.Close()
+	defer c.Close()
+
 	for msgID := 1; msgID <= c.config.LoopAmount && !c.closed; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
 		err := c.createClientSocket()
@@ -83,7 +97,6 @@ func (c *Client) StartClientLoop(bet Bet) {
 		}
 
 		chunk, err := loader.NextChunk(c.config.MaxBatchSize)
-		log.Infof("Sending chunk: %v", chunk)
 		if err != nil {
 			log.Errorf("action: load_bets | result: fail | error: %v", err)
 			return
@@ -103,7 +116,6 @@ func (c *Client) StartClientLoop(bet Bet) {
 		}
 
 		msg, err := RecvAck(c.conn)
-		c.conn.Close()
 
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
