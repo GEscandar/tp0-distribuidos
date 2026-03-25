@@ -78,7 +78,8 @@ func SendBet(conn net.Conn, bet Bet) (int, error) {
 }
 
 func SendBatch(conn net.Conn, bets []Bet) (int, error) {
-	var bytes []byte
+	bytes := make([]byte, 2)
+	binary.BigEndian.PutUint16(bytes, uint16(len(bets)))
 
 	for _, bet := range bets {
 		betBytes, err := SerializeBet(bet)

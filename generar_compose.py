@@ -49,7 +49,7 @@ def generate_docker_compose(output_file, num_clients):
             'networks': ['testing_net'],
             'volumes': [
                 './client/config.yaml:/config.yaml',
-                f'./.data/agency-{i}.csv:/data/agency-{i}.csv'
+                f'./.data/agency-{i}.csv:/.data/agency-{i}.csv'
             ]
         }
 

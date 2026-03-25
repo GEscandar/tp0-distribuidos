@@ -83,9 +83,15 @@ func (c *Client) StartClientLoop(bet Bet) {
 		}
 
 		chunk, err := loader.NextChunk(c.config.MaxBatchSize)
+		log.Infof("Sending chunk: %v", chunk)
 		if err != nil {
 			log.Errorf("action: load_bets | result: fail | error: %v", err)
 			return
+		}
+
+		if len(chunk) == 0 {
+			log.Infof("action: load_bets | result: success | client_id: %v", c.config.ID)
+			break
 		}
 		_, err = SendBatch(c.conn, chunk)
 		if err != nil {
