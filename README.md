@@ -17,6 +17,14 @@ Las funciones `load_bets(...)` y `has_won(...)` son provistas por la cátedra y 
 
 No es correcto realizar un broadcast de todos los ganadores hacia todas las agencias, se espera que se informen los DNIs ganadores que correspondan a cada una de ellas.
 
+
+## Parte 3: Repaso de Concurrencia
+En este ejercicio es importante considerar los mecanismos de sincronización a utilizar para el correcto funcionamiento de la persistencia.
+
+### Ejercicio N°8:
+
+Modificar el servidor para que permita aceptar conexiones y procesar mensajes en paralelo. En caso de que el alumno implemente el servidor en Python utilizando _multithreading_,  deberán tenerse en cuenta las [limitaciones propias del lenguaje](https://wiki.python.org/moin/GlobalInterpreterLock).
+
 ### Solucion
 
 En el protocolo de comunicación, se realizan los siguientes cambios:
@@ -25,4 +33,4 @@ En el protocolo de comunicación, se realizan los siguientes cambios:
 
 
 - En el server, se agrega una barrera para sincronizar a todos los clientes al momento de obtener los ganadores de la lotería.
-- Para que lo anterior sea posible, fue necesario agregar la variable de entorno `N_CLIENTS` a la configuración del server.
+- Para que lo anterior sea posible, fue necesario agregar la variable de entorno `N_CLIENTS` a la configuración.
