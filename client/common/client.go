@@ -84,13 +84,13 @@ func (c *Client) StartClientLoop(bet Bet) {
 		return
 	}
 
-	defer loader.Close()
-	defer c.Close()
-
 	err = c.createClientSocket()
 	if err != nil {
 		return
 	}
+
+	defer loader.Close()
+	defer c.Close()
 
 	for msgID := 1; msgID <= c.config.LoopAmount && !c.closed; msgID++ {
 		chunk, err := loader.NextChunk(c.config.MaxBatchSize)
