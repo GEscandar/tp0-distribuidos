@@ -4,6 +4,7 @@ import yaml
 
 def generate_docker_compose(output_file, num_clients):
     compose_data = {
+        'name': 'tp0',
         'services': {
             'server': {
                 'container_name': 'server',
@@ -11,9 +12,11 @@ def generate_docker_compose(output_file, num_clients):
                 'entrypoint': 'python3 /main.py',
                 'environment': [
                     'PYTHONUNBUFFERED=1',
-                    'LOGGING_LEVEL=DEBUG'
                 ],
-                'networks': ['testing_net']
+                'networks': ['testing_net'],
+                'volumes': [
+                    './server/config.ini:/config.ini'
+                ]
             }
         },
         'networks': {
@@ -36,10 +39,12 @@ def generate_docker_compose(output_file, num_clients):
             'entrypoint': '/client',
             'environment': [
                 f'CLI_ID={i}',
-                'CLI_LOG_LEVEL=DEBUG'
             ],
             'depends_on': ['server'],
-            'networks': ['testing_net']
+            'networks': ['testing_net'],
+            'volumes': [
+                './client/config.yaml:/config.yaml'
+            ]
         }
 
     with open(output_file, 'w') as f:
