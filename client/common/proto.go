@@ -7,6 +7,7 @@ import (
 	"math"
 	"net"
 	"strconv"
+	"strings"
 )
 
 type Bet struct {
@@ -17,6 +18,9 @@ type Bet struct {
 	BirthDate string
 	Number    int
 }
+
+const BATCH_MESSAGE = byte('B')
+const WINNERS_MESSAGE = byte('W')
 
 func NewBet(agency string, name string, surname string, docNumber string, birthDate string, betNumber string) (Bet, error) {
 	agencyNumber, err := strconv.Atoi(agency)
@@ -78,6 +82,10 @@ func SendBet(conn net.Conn, bet Bet) (int, error) {
 }
 
 func SendBatch(conn net.Conn, bets []Bet) (int, error) {
+	_, err := Sendall(conn, []byte{BATCH_MESSAGE})
+	if err != nil {
+		return 0, fmt.Errorf("failed to send batch message | %v", err)
+	}
 	bytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(bytes, uint16(len(bets)))
 
@@ -107,4 +115,42 @@ func RecvAck(conn net.Conn) (string, error) {
 	}
 
 	return string(buf), nil
+}
+
+func SendWinnersRequest(conn net.Conn) (int, error) {
+	return Sendall(conn, []byte{WINNERS_MESSAGE})
+}
+
+func RecvWinners(conn net.Conn) ([]Bet, error) {
+	buf := make([]byte, 2)
+	err := binary.Read(conn, binary.BigEndian, buf)
+	if err != nil {
+		return nil, fmt.Errorf("error receiving message")
+	}
+	batch_size := binary.BigEndian.Uint16(buf)
+
+	winners := make([]Bet, 0, batch_size)
+	for i := 0; i < int(batch_size); i++ {
+		buf = make([]byte, 2)
+		err = binary.Read(conn, binary.BigEndian, buf)
+		if err != nil {
+			return nil, fmt.Errorf("error receiving message")
+		}
+		msg_size := binary.BigEndian.Uint16(buf)
+		buf = make([]byte, msg_size)
+		_, err = io.ReadFull(conn, buf)
+		if err != nil {
+			return nil, fmt.Errorf("error receiving message")
+		}
+
+		betData := string(buf)
+		fields := strings.SplitN(betData, ",", 6)
+		bet, err := NewBet(fields[0], fields[1], fields[2], fields[3], fields[4], fields[5])
+		if err != nil {
+			return nil, fmt.Errorf("error parsing bet data | %v", err)
+		}
+		winners = append(winners, bet)
+	}
+
+	return winners, nil
 }

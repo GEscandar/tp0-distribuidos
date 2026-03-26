@@ -5,6 +5,11 @@ from socket import socket
 MAX_UINT16_VALUE = 2**16-1
 MSG_SIZE_BYTE_LEN = 2
 
+methods = {
+    'B': 'batch',
+    'W': 'winners'
+}
+
 class DummyProtocol:
         
     def read(self, sock: socket, size: int):
@@ -29,6 +34,16 @@ class DummyProtocol:
         msg = "{},{},{},{},{},{}".format(
             bet.agency, bet.first_name, bet.last_name, bet.document, bet.birthdate, bet.number)
         self.send_bytes(sock, msg.encode('utf-8'))
+        
+    def send_batch(self, sock: socket, bets: list[Bet]):
+        batch_size = len(bets)
+        
+        if batch_size > MAX_UINT16_VALUE:
+            raise ValueError("Batch size too large")
+        
+        sock.sendall(struct.pack('>H', batch_size))
+        for bet in bets:
+            self.send(sock, bet)
         
     def ack(self, sock: socket, bet: Bet):
         msg = "{},{}".format(bet.document, bet.number)

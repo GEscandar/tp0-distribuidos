@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -41,10 +42,7 @@ func NewClient(config ClientConfig) *Client {
 	go func() {
 		<-s
 		log.Info("action: signal_received | result: in_progress")
-		if client.conn != nil {
-			_ = client.conn.Close()
-		}
-		client.closed = true
+		client.Close()
 	}()
 	return client
 }
@@ -102,10 +100,6 @@ func (c *Client) StartClientLoop(bet Bet) {
 			return
 		}
 
-		if len(chunk) == 0 {
-			log.Infof("action: load_bets | result: success | client_id: %v", c.config.ID)
-			break
-		}
 		_, err = SendBatch(c.conn, chunk)
 		if err != nil {
 			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
@@ -113,6 +107,11 @@ func (c *Client) StartClientLoop(bet Bet) {
 				err,
 			)
 			return
+		}
+
+		if len(chunk) == 0 {
+			log.Infof("action: load_bets | result: success | client_id: %v", c.config.ID)
+			break
 		}
 
 		msg, err := RecvAck(c.conn)
@@ -133,4 +132,28 @@ func (c *Client) StartClientLoop(bet Bet) {
 		)
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+
+	winners, err := c.getWinners()
+	if err != nil {
+		log.Errorf("action: get_winners | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+		return
+	}
+
+	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d",
+		len(winners),
+	)
+}
+
+func (c *Client) getWinners() ([]Bet, error) {
+	_, err := SendWinnersRequest(c.conn)
+	if err != nil {
+		return nil, fmt.Errorf("action: send_winners_request | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+	}
+	return RecvWinners(c.conn)
 }
