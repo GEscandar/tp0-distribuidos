@@ -4,6 +4,7 @@ import yaml
 
 def generate_docker_compose(output_file, num_clients):
     compose_data = {
+        'name': 'tp0',
         'services': {
             'server': {
                 'container_name': 'server',
