@@ -87,13 +87,12 @@ func (c *Client) StartClientLoop(bet Bet) {
 	defer loader.Close()
 	defer c.Close()
 
-	for msgID := 1; msgID <= c.config.LoopAmount && !c.closed; msgID++ {
-		// Create the connection the server in every loop iteration. Send an
-		err := c.createClientSocket()
-		if err != nil {
-			return
-		}
+	err = c.createClientSocket()
+	if err != nil {
+		return
+	}
 
+	for msgID := 1; msgID <= c.config.LoopAmount && !c.closed; msgID++ {
 		chunk, err := loader.NextChunk(c.config.MaxBatchSize)
 		if err != nil {
 			log.Errorf("action: load_bets | result: fail | error: %v", err)
